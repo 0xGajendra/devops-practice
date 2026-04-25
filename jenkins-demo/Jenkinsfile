@@ -1,0 +1,47 @@
+pipeline{
+    agent any
+    
+    stages{
+        stage('Checkout'){
+            steps{
+                git branch: 'main', url:'https://github.com/0xGajendra/devops-practice.git'
+            }
+        }
+
+        stage("Start and Test"){
+            steps{
+                dir('jenkins-demo'){
+                    sh 'npm install'
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage("Build Docker Image"){
+            steps{
+                dir('jenkins-demo'){
+                    sh 'docker build -t jenkin-demo:latest .'
+                }
+            }
+        }
+
+        stage("Deploy"){
+            steps{
+                sh '''
+                    docker stop jenkins-demo || true
+                    docker rm jenkins-demo || true
+                    docker run -d --name jenkins-demo -p 3000:3000 jenkins-demo:latest
+                '''
+
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Deployed'
+        }
+        failure{
+            echo 'Failed'
+        }
+    }
+}
